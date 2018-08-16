@@ -5,7 +5,7 @@ Flask app to respond to webhooks, must be named app.py
 :docType: reStructuredText
 """
 from flask import Flask, request
-import sys, os, configparser, math
+import sys, os, configparser, math, traceback
 
 # project-level imports: ensure project root in import path
 PROJECT_PATH = \
@@ -27,6 +27,19 @@ slack_app = SlackApp(slack_token)
 
 # create flask app and define routes
 app = Flask(__name__)
+
+# exception helper
+def traceback_helper():
+    try:
+        exc_type, exc_value, exc_tb = sys.exc_info()
+        tbe = traceback.TracebackException(
+            exc_type, exc_value, exc_tb,
+        )
+        text = "\n".join(tbe.format_exception_only())
+        app.logger.error(text)
+    except Exception:
+        app.logger.error("There was an exception, but the traceback could " +
+                "not be logged.")
 
 @app.route("/")
 def hello():
@@ -77,13 +90,23 @@ def slack_hook():
                 truck_lat = truck["lat"]
                 truck_long = truck["long"]
                 truck_id = truck["truck_id"]
-                truck_info = next(filter(lambda x: x["truck_id"] == truck_id, trucks))
+                try:
+                    truck_info = next(filter(lambda x: x["truck_id"] == truck_id, trucks))
+                except StopIteration:
+                    truck_info = None
+                    break
                 truck_name = truck_info["name"]
+                app.logger.warn(truck_name)
                 phi_deg = math.sqrt((truck_lat-target_lat)**2 + (truck_long-target_long)**2)
                 phi_radians = phi_deg / 180 * 3.1415926
                 earth_radius = 6371 # km
-                distance = earth_radius * phi_radians
-                message += "Truck \"%s\" is %.02f km from metro.\n"%(truck_name, distance)
+                distance_km = earth_radius * phi_radians
+                distance_miles = distance_km / 1.604
+                if distance_miles > 1:
+                    message += "Truck \"%s\" is %.02f miles from metro.\n"%(truck_name, distance_miles)
+                else:
+                    distance_ft = distance_miles * 5280
+                    message += "Truck \"%s\" is %.02f feet from metro.\n"%(truck_name, distance_ft)
         elif text[:6] == "checkin":
             message = "Functionality not supported yet."
 
@@ -99,5 +122,5 @@ def slack_hook():
         return ""
 
     except Exception as e:
-        app.logger.error(str(e))
+        traceback_helper()
         return "Sorry, I don't know how to help you."
