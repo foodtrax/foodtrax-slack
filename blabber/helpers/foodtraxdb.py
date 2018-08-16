@@ -7,8 +7,7 @@ Reads from the FoodTrax database
 :author: Elliot Miller
 :docType: reStructuredText
 """
-import mysql.connector
-import re
+import configparser, mysql.connector, re, os, sys
 
 def is_valid_table_name(name):
     """
@@ -105,3 +104,22 @@ class FoodTraxDB:
                 and len(records[0]) == len(headers)
         # convert each record from a list into a dictionary
         return list(map(lambda x: dict(zip(headers, x)), records))
+
+def from_config():
+    """
+    create a FoodTraxDB object using the config.ini file in the root of this
+    project
+    """
+    # look in project root for config.ini
+    PROJECT_PATH = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
+    CONFIG_PATH = os.path.join(PROJECT_PATH, "config.ini")
+    # load config
+    config = configparser.ConfigParser()
+    config.read(CONFIG_PATH)
+    db_host = config['DATABASE']['host']
+    db_user = config['DATABASE']['user']
+    db_pass = config['DATABASE']['pass']
+    return FoodTraxDB(db_host, db_user, db_pass)
+

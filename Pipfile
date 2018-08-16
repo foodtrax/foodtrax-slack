@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 slacker = "*"
 mysql-connector = "*"
+flask = "*"
 
 [dev-packages]
 
