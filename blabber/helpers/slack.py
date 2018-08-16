@@ -79,3 +79,10 @@ class SlackApp:
         # post message
         response = self.client.chat.post_message(channel, message)
         assert response.successful == True
+        return response
+
+    def slacker(self):
+        """
+        Return the Slacker instance used by this class
+        """
+        return self.client
