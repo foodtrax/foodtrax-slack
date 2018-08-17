@@ -25,22 +25,30 @@ class FoodTraxDB:
     def __init__(self, host, user, passwd):
         assert isinstance(host, str) and isinstance(user, str) \
                 and isinstance(passwd, str)
-        self.connector = mysql.connector.connect(
-            host=host,
+        self.host = host
+        self.user = user
+        self.passwd = passwd
+
+    def __query(self, query):
+        connector = mysql.connector.connect(
+            host=self.host,
             port="3306",
             database="foodtrax",
-            user=user,
-            passwd=passwd
+            user=self.user,
+            passwd=self.passwd
         )
+        cursor = connector.cursor()
+        cursor.execute(query)
+        result = cursor.fetchall()
+        return result
+
 
     def list_table_headers(self, table_name):
         # validate the arguments
         assert isinstance(table_name, str), "arg table_name is the wrong type"
         assert is_valid_table_name(table_name), "arg table_name is not valid"
         # query the database
-        cursor = self.connector.cursor()
-        cursor.execute("SHOW COLUMNS FROM {};".format(table_name))
-        result = cursor.fetchall()
+        result = self.__query("SHOW COLUMNS FROM {};".format(table_name))
         # result will be a list of tuples; the first element of each tuple
         # should be the field name
         try:
@@ -56,11 +64,9 @@ class FoodTraxDB:
         :return: list of table names
         :rtype: list
         """
-        cursor = self.connector.cursor()
-        cursor.execute("SHOW TABLES;")
         # result will be a list of single-element tuples containing the name of
         # each table
-        result = cursor.fetchall()
+        result = self.__query("SHOW TABLES;")
         # attempt to unpack result
         try:
             return list(map(lambda x: x[0], result))
@@ -81,9 +87,7 @@ class FoodTraxDB:
         assert isinstance(table_name, str), "arg table_name is the wrong type"
         assert is_valid_table_name(table_name), "arg table_name is not valid"
         # query the database
-        cursor = self.connector.cursor()
-        cursor.execute("SELECT * FROM {};".format(table_name))
-        result = cursor.fetchall()
+        result = self.__query("SELECT * FROM {};".format(table_name))
         return result
 
     def get_table_with_labels(self, table_name):
