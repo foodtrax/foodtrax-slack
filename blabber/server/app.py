@@ -102,11 +102,9 @@ def slack_hook():
                 earth_radius = 6371 # km
                 distance_km = earth_radius * phi_radians
                 distance_miles = distance_km / 1.604
-                if distance_miles > 1:
-                    message += "Truck \"%s\" is %.02f miles from metro.\n"%(truck_name, distance_miles)
-                else:
-                    distance_ft = distance_miles * 5280
-                    message += "Truck \"%s\" is %.02f feet from metro.\n"%(truck_name, distance_ft)
+                distance_ft = distance_miles * 5280
+                if distance_ft < 1000:
+                    message += "Truck \"%s\" is %d feet from metro.\n"%(truck_name, distance_ft)
         elif text[:6] == "checkin":
             message = "Functionality not supported yet."
 
